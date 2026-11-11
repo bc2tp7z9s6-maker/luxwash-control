@@ -1,1 +1,320 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0b1018">
+<title>LuxWash Control</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b1018;color:#f4f6fa;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:25px 20px 18px;background:#111a27;border-bottom:1px solid #263244}
+.brand{font-size:12px;letter-spacing:3px;color:#65a8ff;font-weight:800}
+h1{font-size:25px;margin:9px 0 4px}
+.sub{font-size:13px;color:#91a0b4}
+main{padding:20px;padding-bottom:100px;max-width:650px;margin:auto}
+.section-title{font-size:18px;font-weight:750;margin:24px 0 13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:#151f2d;border:1px solid #26364b;border-radius:16px;padding:16px;margin-bottom:12px}
+.stat{font-size:28px;font-weight:800;margin-top:10px}
+.muted{color:#91a0b4;font-size:12px}
+.icon{font-size:23px}
+.card-title{font-weight:700;margin-top:9px}
+button{border:0;border-radius:12px;padding:13px 16px;background:#287cf0;color:white;font-weight:700;font-size:14px}
+button:active{opacity:.75}
+button.action{width:100%;text-align:left;background:#151f2d;border:1px solid #26364b;margin-bottom:10px;color:white}
+nav{position:fixed;bottom:0;left:0;right:0;background:#111a27;border-top:1px solid #263244;display:flex;justify-content:space-around;padding:10px 3px calc(10px + env(safe-area-inset-bottom));z-index:5}
+nav button{background:none;color:#91a0b4;padding:7px 3px;font-size:11px;display:flex;flex-direction:column;gap:5px;align-items:center}
+nav button.active{color:#62a5ff}
+nav span{font-size:19px}
+.page{display:none}
+.page.active{display:block}
+.item{background:#151f2d;border:1px solid #26364b;padding:14px;border-radius:14px;margin-bottom:10px}
+.item strong{display:block;margin-bottom:6px}
+.tag{display:inline-block;background:#26364b;color:#9ec6ff;padding:5px 9px;border-radius:20px;font-size:11px;margin-top:8px}
+input:not([type=checkbox]),textarea,select{width:100%;padding:13px;margin:7px 0 14px;background:#101925;border:1px solid #34445a;border-radius:10px;color:white;font-size:15px}
+label{font-size:13px;color:#aebbd0}
+form button{width:100%;margin-top:5px}
+.empty{color:#91a0b4;text-align:center;padding:25px 10px;font-size:13px}
+.check-row{display:block;margin:17px 0}
+.check-row input{width:18px;height:18px;vertical-align:middle;margin-right:9px}
+.form-box{display:none;margin-top:18px}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="brand">LUXWASH</div>
+ <h1>Control Center</h1>
+ <div class="sub">Панель управления автомойкой</div>
+</header>
+
+<main>
+
+<section class="page active" id="home">
+ <div class="section-title">Обзор</div>
+ <div class="grid">
+  <div class="card">
+   <div class="icon">🔧</div>
+   <div class="muted">Заявки на ТО</div>
+   <div class="stat" id="stat-maint">0</div>
+  </div>
+  <div class="card">
+   <div class="icon">🧴</div>
+   <div class="muted">Заказы химии</div>
+   <div class="stat" id="stat-chem">0</div>
+  </div>
+  <div class="card">
+   <div class="icon">✅</div>
+   <div class="muted">Проверки</div>
+   <div class="stat" id="stat-check">0</div>
+  </div>
+  <div class="card">
+   <div class="icon">👥</div>
+   <div class="muted">Сотрудники</div>
+   <div class="stat">5</div>
+  </div>
+ </div>
+
+ <div class="section-title">Быстрые действия</div>
+ <button class="action" onclick="showPage('maintenance')">🔧　Создать заявку на обслуживание</button>
+ <button class="action" onclick="showPage('chemicals')">🧴　Создать заказ химии</button>
+ <button class="action" onclick="showPage('checks')">✅　Провести проверку мойки</button>
+
+ <div class="section-title">Последние события</div>
+ <div id="recent" class="empty">Пока нет событий</div>
+</section>
+
+<section class="page" id="maintenance">
+ <div class="section-title">Техническое обслуживание</div>
+ <button onclick="toggleForm('maintenance-form')">+ Новая заявка</button>
+
+ <form id="maintenance-form" class="form-box" onsubmit="addItem(event,'maintenance')">
+  <label>Название неисправности</label>
+  <input name="title" required placeholder="Например, не работает насос">
+
+  <label>Оборудование</label>
+  <input name="equipment" placeholder="Например, пост №1">
+
+  <label>Приоритет</label>
+  <select name="priority">
+   <option>Обычный</option>
+   <option>Высокий</option>
+   <option>Критический</option>
+  </select>
+
+  <label>Описание</label>
+  <textarea name="description" placeholder="Подробности"></textarea>
+  <button type="submit">Создать заявку</button>
+ </form>
+
+ <div class="section-title">Список заявок</div>
+ <div id="maintenance-list" class="empty">Заявок пока нет</div>
+</section>
+
+<section class="page" id="chemicals">
+ <div class="section-title">Заказы химии</div>
+ <button onclick="toggleForm('chem-form')">+ Новый заказ</button>
+
+ <form id="chem-form" class="form-box" onsubmit="addItem(event,'chemicals')">
+  <label>Название продукта</label>
+  <input name="title" required placeholder="Например, активная пена">
+
+  <label>Количество</label>
+  <input name="quantity" required placeholder="Например, 20 л">
+
+  <label>Поставщик</label>
+  <input name="supplier" placeholder="Название поставщика">
+
+  <label>Комментарий</label>
+  <textarea name="description" placeholder="Дополнительная информация"></textarea>
+  <button type="submit">Отправить заказ</button>
+ </form>
+
+ <div class="section-title">История заказов</div>
+ <div id="chemicals-list" class="empty">Заказов пока нет</div>
+</section>
+
+<section class="page" id="checks">
+ <div class="section-title">Контроль автомойки</div>
+ <div class="muted">Ежедневный контроль состояния объекта</div>
+
+ <div class="card" style="margin-top:15px">
+  <label class="check-row"><input type="checkbox">Проверить чистоту постов</label>
+  <label class="check-row"><input type="checkbox">Проверить наличие химии</label>
+  <label class="check-row"><input type="checkbox">Проверить оборудование</label>
+  <label class="check-row"><input type="checkbox">Проверить территорию</label>
+  <label class="check-row"><input type="checkbox">Проверить технические помещения</label>
+  <button style="width:100%;margin-top:12px" onclick="saveCheck()">Сохранить проверку</button>
+ </div>
+
+ <div class="section-title">История проверок</div>
+ <div id="checks-list" class="empty">Проверок пока нет</div>
+</section>
+
+<section class="page" id="staff">
+ <div class="section-title">Персонал</div>
+
+ <div class="card">
+  <div class="icon">👤</div>
+  <div class="card-title">Администратор</div>
+  <div class="muted">Управление заявками и ежедневными задачами</div>
+ </div>
+
+ <div class="section-title">Сотрудники</div>
+ <div class="item"><strong>Сотрудник 1</strong><span class="muted">Администратор</span></div>
+ <div class="item"><strong>Сотрудник 2</strong><span class="muted">Администратор</span></div>
+ <div class="item"><strong>Сотрудник 3</strong><span class="muted">Администратор</span></div>
+ <div class="item"><strong>Сотрудник 4</strong><span class="muted">Администратор</span></div>
+ <div class="item"><strong>Сотрудник 5</strong><span class="muted">Администратор</span></div>
+
+ <div class="muted">Список демонстрационный. Реальные сотрудники будут загружаться из базы.</div>
+</section>
+
+</main>
+
+<nav>
+ <button class="active" onclick="showPage('home',this)"><span>⌂</span>Главная</button>
+ <button onclick="showPage('maintenance',this)"><span>🔧</span>ТО</button>
+ <button onclick="showPage('chemicals',this)"><span>🧴</span>Химия</button>
+ <button onclick="showPage('checks',this)"><span>✓</span>Проверки</button>
+ <button onclick="showPage('staff',this)"><span>👥</span>Персонал</button>
+</nav>
+
+<script>
+const data = {
+ maintenance: [],
+ chemicals: [],
+ checks: []
+};
+
+function showPage(id,btn){
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ if(btn) btn.classList.add('active');
+}
+
+function toggleForm(id){
+ const form=document.getElementById(id);
+ form.style.display=form.style.display==='block'?'none':'block';
+}
+
+function addItem(event,type){
+ event.preventDefault();
+
+ const form=event.target;
+ const values=Object.fromEntries(new FormData(form));
+
+ data[type].unshift(values);
+ render(type);
+ updateStats();
+ updateRecent();
+
+ form.reset();
+ form.style.display='none';
+
+ alert('Запись добавлена');
+}
+
+function escapeHTML(value){
+ return String(value||'').replace(/[&<>"']/g,c=>({
+  '&':'&amp;',
+  '<':'&lt;',
+  '>':'&gt;',
+  '"':'&quot;',
+  "'":'&#39;'
+ }[c]));
+}
+
+function render(type){
+ const container=document.getElementById(type+'-list');
+
+ if(!data[type].length){
+  container.className='empty';
+  container.textContent=type==='maintenance'?'Заявок пока нет':'Заказов пока нет';
+  return;
+ }
+
+ container.className='';
+ container.innerHTML=data[type].map(item=>{
+  const details=item.description||item.equipment||item.quantity||'';
+  const tag=item.priority||item.supplier||'Новая запись';
+
+  return `
+   <div class="item">
+    <strong>${escapeHTML(item.title)}</strong>
+    <span class="muted">${escapeHTML(details)}</span>
+    <br>
+    <span class="tag">${escapeHTML(tag)}</span>
+   </div>
+  `;
+ }).join('');
+}
+
+function updateStats(){
+ document.getElementById('stat-maint').textContent=data.maintenance.length;
+ document.getElementById('stat-chem').textContent=data.chemicals.length;
+ document.getElementById('stat-check').textContent=data.checks.length;
+}
+
+function updateRecent(){
+ const all=[
+  ...data.maintenance.map(x=>({title:x.title,type:'Техническое обслуживание'})),
+  ...data.chemicals.map(x=>({title:x.title,type:'Заказ химии'})),
+  ...data.checks.map(x=>({title:x.title,type:'Проверка'}))
+ ].slice(0,5);
+
+ const container=document.getElementById('recent');
+
+ if(!all.length){
+  container.className='empty';
+  container.textContent='Пока нет событий';
+  return;
+ }
+
+ container.className='';
+ container.innerHTML=all.map(x=>`
+  <div class="item">
+   <strong>${escapeHTML(x.title)}</strong>
+   <span class="muted">${escapeHTML(x.type)}</span>
+  </div>
+ `).join('');
+}
+
+function saveCheck(){
+ const boxes=[...document.querySelectorAll('#checks input[type=checkbox]')];
+ const checked=boxes.filter(x=>x.checked).length;
+
+ if(!checked){
+  alert('Отметь выполненные пункты');
+  return;
+ }
+
+ data.checks.unshift({
+  title:'Проверка автомойки',
+  description:'Выполнено пунктов: '+checked+' из '+boxes.length
+ });
+
+ const list=document.getElementById('checks-list');
+ list.className='';
+ list.innerHTML=data.checks.map(x=>`
+  <div class="item">
+   <strong>${escapeHTML(x.title)}</strong>
+   <span class="muted">${escapeHTML(x.description)}</span>
+  </div>
+ `).join('');
+
+ updateStats();
+ updateRecent();
+
+ boxes.forEach(x=>x.checked=false);
+ alert('Проверка сохранена');
+}
+</script>
+
+</body>
+</html>
+
